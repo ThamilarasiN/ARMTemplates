@@ -1,0 +1,14 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageacctest1Type": {"value": "Standard_LRS"},
+        "testvm12Name": {
+            "value": "testvm12"
+        },
+        "testvm12AdminUserName": {
+            "value": "testadmin"
+        }
+       
+    }
+}

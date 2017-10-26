@@ -1,0 +1,4 @@
+C:\Users\WDWAPADMIN\Documents\Visual Studio 2013\Projects\AzureResourceGroup1\AzureResourceGroup1\bin\Debug\azuredeploy.json
+C:\Users\WDWAPADMIN\Documents\Visual Studio 2013\Projects\AzureResourceGroup1\AzureResourceGroup1\bin\Debug\azuredeploy.parameters.json
+C:\Users\WDWAPADMIN\Documents\Visual Studio 2013\Projects\AzureResourceGroup1\AzureResourceGroup1\bin\Debug\Deploy-AzureResourceGroup.ps1
+C:\Users\WDWAPADMIN\Documents\Visual Studio 2013\Projects\AzureResourceGroup1\AzureResourceGroup1\bin\Debug\CustomScripts\customscript.ps1

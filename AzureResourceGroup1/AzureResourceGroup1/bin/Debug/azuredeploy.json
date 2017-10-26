@@ -1,0 +1,244 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageacctest1Type": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ]
+        },
+        "testvm12Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "testvm12AdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "testvm12AdminPassword": {
+            "type": "securestring"
+        },
+        "testvm12WindowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2012-R2-Datacenter",
+            "allowedValues": [
+                "2008-R2-SP1",
+                "2012-Datacenter",
+                "2012-R2-Datacenter",
+                "Windows-Server-Technical-Preview"
+            ]
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
+        } },
+    "variables": {
+        "storageacctest1Name": "[concat('stor1', uniqueString(resourceGroup().id))]",
+        "testvnetPrefix": "10.0.0.0/16",
+        "testvnetSubnet1Name": "Subnet-1",
+        "testvnetSubnet1Prefix": "10.0.0.0/24",
+        "testvnetSubnet2Name": "Subnet-2",
+        "testvnetSubnet2Prefix": "10.0.1.0/24",
+        "testvnet12Prefix": "10.0.0.0/16",
+        "testvnet12Subnet1Name": "Subnet-1",
+        "testvnet12Subnet1Prefix": "10.0.0.0/24",
+        "testvnet12Subnet2Name": "Subnet-2",
+        "testvnet12Subnet2Prefix": "10.0.1.0/24",
+        "testvm12ImagePublisher": "MicrosoftWindowsServer",
+        "testvm12ImageOffer": "WindowsServer",
+        "testvm12OSDiskName": "testvm12OSDisk",
+        "testvm12VmSize": "Standard_D2_v2",
+        "testvm12VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'testvnet12')]",
+        "testvm12SubnetRef": "[concat(variables('testvm12VnetID'), '/subnets/', variables('testvnet12Subnet1Name'))]",
+        "testvm12StorageAccountContainerName": "vhds",
+        "testvm12NicName": "[concat(parameters('testvm12Name'), 'NetworkInterface')]",
+        "customscriptScriptFolder": "CustomScripts",
+        "customscriptScriptFileName": "customscript.ps1" },
+    "resources": [
+        {
+            "name": "[variables('storageacctest1Name')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "storageacctest1"
+            },
+            "properties": {
+                "accountType": "[parameters('storageacctest1Type')]"
+            }
+        },
+        {
+            "name": "testvnet",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2016-03-30",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "testvnet"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('testvnetPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('testvnetSubnet1Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('testvnetSubnet1Prefix')]"
+                        }
+                    },
+                    {
+                        "name": "[variables('testvnetSubnet2Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('testvnetSubnet2Prefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "testvnet12",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2016-03-30",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "testvnet12"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('testvnet12Prefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('testvnet12Subnet1Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('testvnet12Subnet1Prefix')]"
+                        }
+                    },
+                    {
+                        "name": "[variables('testvnet12Subnet2Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('testvnet12Subnet2Prefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('testvm12NicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2016-03-30",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', 'testvnet12')]"
+            ],
+            "tags": {
+                "displayName": "testvm12Nic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('testvm12SubnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('testvm12Name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageacctest1Name'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('testvm12NicName'))]"
+            ],
+            "tags": {
+                "displayName": "testvm12"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('testvm12VmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('testvm12Name')]",
+                    "adminUsername": "[parameters('testvm12AdminUsername')]",
+                    "adminPassword": "[parameters('testvm12AdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('testvm12ImagePublisher')]",
+                        "offer": "[variables('testvm12ImageOffer')]",
+                        "sku": "[parameters('testvm12WindowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "testvm12OSDisk",
+                        "vhd": {
+                            "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageacctest1Name')), '2016-01-01').primaryEndpoints.blob, variables('testvm12StorageAccountContainerName'), '/', variables('testvm12OSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('testvm12NicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "customscript",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2016-03-30",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('testvm12Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "customscript"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.4",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(parameters('_artifactsLocation'), '/', variables('customscriptScriptFolder'), '/', variables('customscriptScriptFileName'), parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', variables('customscriptScriptFolder'), '/', variables('customscriptScriptFileName'))]"
+                        }
+                    }
+                }
+            ]
+        } ],
+  "outputs": {}
+}
